@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CYBER SENTINEL 2025 — SYSTEM INIT</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cyan:#00f5ff;
+  --green:#00ff88;
+  --blue:#0080ff;
+  --dark:#020810;
+  --dark2:#040f1a;
+  --dark3:#061525;
+  --glow-c:rgba(0,245,255,0.6);
+  --glow-g:rgba(0,255,136,0.6);
+  --grid:rgba(0,180,255,0.06);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--dark);cursor:crosshair}
+body{font-family:'Rajdhani',sans-serif;color:var(--cyan);position:relative}
+
+/* MATRIX RAIN CANVAS */
+#matrixCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.18}
+
+/* GRID OVERLAY */
+.grid-overlay{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:60px 60px;
+  animation:gridPulse 8s ease-in-out infinite;
+}
+@keyframes gridPulse{0%,100%{opacity:0.6}50%{opacity:1}}
+
+/* SCANLINES */
+.scanlines{
+  position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px);
+  animation:scanMove 0.1s linear infinite;
+}
+@keyframes scanMove{0%{background-position:0 0}100%{background-position:0 4px}}
+
+/* CORNER DECORATIONS */
+.corner{position:fixed;width:80px;height:80px;z-index:3;pointer-events:none}
+.corner::before,.corner::after{content:'';position:absolute;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.corner::before{width:2px;height:40px}.corner::after{width:40px;height:2px}
+.c-tl{top:20px;left:20px}.c-tl::before{top:0;left:0}.c-tl::after{top:0;left:0}
+.c-tr{top:20px;right:20px;transform:scaleX(-1)}
+.c-bl{bottom:20px;left:20px;transform:scaleY(-1)}
+.c-br{bottom:20px;right:20px;transform:scale(-1)}
+
+/* STATUS BARS */
+.status-top,.status-bottom{
+  position:fixed;left:0;right:0;z-index:10;
+  font-family:'Share Tech Mono',monospace;font-size:11px;
+  color:rgba(0,245,255,0.6);padding:8px 24px;
+  display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid rgba(0,245,255,0.1);
+  background:rgba(2,8,16,0.8);backdrop-filter:blur(4px);
+}
+.status-top{top:0;border-bottom:1px solid rgba(0,245,255,0.12)}
+.status-bottom{bottom:0;border-top:1px solid rgba(0,245,255,0.12);border-bottom:none;flex-wrap:wrap;gap:4px}
+.blink{animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.dot-green{color:var(--green);text-shadow:0 0 8px var(--green)}
+.dot-red{color:#ff3355;animation:blink 0.8s step-end infinite}
+
+/* MAIN STAGE */
+.stage{
+  position:fixed;inset:0;z-index:5;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  padding:60px 20px;
+  transition:opacity 0.3s;
+}
+
+/* HEADER */
+.event-badge{
+  font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0.3em;
+  color:var(--green);text-shadow:0 0 10px var(--green);
+  border:1px solid rgba(0,255,136,0.3);padding:5px 20px;border-radius:2px;
+  margin-bottom:16px;
+  background:rgba(0,255,136,0.05);
+}
+.event-title{
+  font-family:'Orbitron',monospace;font-size:clamp(2rem,6vw,5rem);font-weight:900;
+  line-height:1;text-align:center;letter-spacing:0.05em;
+  text-shadow:0 0 30px rgba(0,245,255,0.8),0 0 60px rgba(0,245,255,0.4);
+  margin-bottom:6px;
+  animation:titleGlow 3s ease-in-out infinite;
+}
+@keyframes titleGlow{
+  0%,100%{text-shadow:0 0 20px rgba(0,245,255,0.8),0 0 40px rgba(0,245,255,0.4)}
+  50%{text-shadow:0 0 40px rgba(0,245,255,1),0 0 80px rgba(0,245,255,0.6),0 0 120px rgba(0,245,255,0.3)}
+}
+.event-title span{color:var(--green);text-shadow:0 0 30px rgba(0,255,136,0.8)}
+.event-sub{
+  font-family:'Orbitron',monospace;font-size:clamp(0.7rem,2vw,1.1rem);
+  letter-spacing:0.4em;color:rgba(0,245,255,0.5);text-align:center;
+  margin-bottom:40px;
+}
+
+/* HEX RING AROUND BUTTON */
+.btn-orbit{position:relative;width:260px;height:260px;display:flex;align-items:center;justify-content:center;margin:0 auto}
+.ring{position:absolute;border-radius:50%;border:1px solid}
+.ring-1{width:240px;height:240px;border-color:rgba(0,245,255,0.15);animation:spin 20s linear infinite}
+.ring-2{width:210px;height:210px;border-color:rgba(0,245,255,0.25);animation:spin 12s linear infinite reverse}
+.ring-3{width:180px;height:180px;border-color:rgba(0,255,136,0.2);animation:spin 8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ring-1::before,.ring-2::before,.ring-3::before{
+  content:'';position:absolute;top:-3px;left:50%;width:6px;height:6px;
+  background:var(--cyan);border-radius:50%;transform:translateX(-50%);
+  box-shadow:0 0 10px var(--cyan),0 0 20px var(--cyan);
+}
+.ring-3::before{background:var(--green);box-shadow:0 0 10px var(--green)}
+
+/* MAIN LAUNCH BUTTON */
+.launch-btn{
+  position:relative;z-index:2;
+  width:150px;height:150px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,100,180,0.3) 0%,rgba(0,30,60,0.8) 60%,rgba(2,8,16,0.95) 100%);
+  border:2px solid var(--cyan);
+  box-shadow:0 0 0 1px rgba(0,245,255,0.1),0 0 20px rgba(0,245,255,0.3),0 0 60px rgba(0,245,255,0.1),inset 0 0 30px rgba(0,245,255,0.05);
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  transition:all 0.15s;
+  overflow:hidden;
+}
+.launch-btn::before{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 0deg,transparent 0%,rgba(0,245,255,0.15) 20%,transparent 40%);
+  animation:spin 3s linear infinite;
+}
+.launch-btn:hover{
+  box-shadow:0 0 0 2px var(--cyan),0 0 40px rgba(0,245,255,0.6),0 0 80px rgba(0,245,255,0.3),inset 0 0 40px rgba(0,245,255,0.1);
+  transform:scale(1.04);
+}
+.launch-btn:active{transform:scale(0.97)}
+.btn-icon{
+  width:36px;height:36px;position:relative;z-index:1;
+  filter:drop-shadow(0 0 8px var(--cyan));
+}
+.btn-label{
+  font-family:'Orbitron',monospace;font-size:10px;font-weight:700;
+  letter-spacing:0.15em;color:var(--cyan);z-index:1;text-align:center;
+  text-shadow:0 0 10px var(--cyan);line-height:1.3;
+}
+
+/* CIRCUIT LINES SVG BEHIND BTN */
+.circuit-bg{position:absolute;inset:0;opacity:0.3;pointer-events:none}
+
+/* INFO ROW */
+.info-row{
+  display:flex;gap:40px;margin-top:36px;flex-wrap:wrap;justify-content:center;
+}
+.info-item{text-align:center}
+.info-label{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:0.2em;color:rgba(0,245,255,0.4);margin-bottom:4px}
+.info-val{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:var(--cyan);text-shadow:0 0 10px rgba(0,245,255,0.5)}
+
+/* SIDE PANELS */
+.panel{
+  position:fixed;top:50%;transform:translateY(-50%);z-index:6;
+  width:160px;font-family:'Share Tech Mono',monospace;font-size:10px;
+  color:rgba(0,245,255,0.5);line-height:2;
+}
+.panel-l{left:20px;text-align:left}.panel-r{right:20px;text-align:right}
+.panel-title{color:var(--green);letter-spacing:0.15em;font-size:9px;margin-bottom:8px}
+.bar{height:3px;background:rgba(0,245,255,0.1);margin:4px 0;border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;animation:barAnim 3s ease-in-out infinite}
+@keyframes barAnim{0%{width:20%}50%{width:90%}100%{width:45%}}
+
+/* ===== GLITCH OVERLAY ===== */
+#glitchOverlay{
+  position:fixed;inset:0;z-index:50;display:none;pointer-events:none;
+  background:var(--dark);
+}
+#glitchOverlay.active{display:block}
+.glitch-line{
+  position:absolute;left:0;right:0;height:3px;
+  background:var(--cyan);opacity:0;mix-blend-mode:screen;
+}
+.scan-bar{
+  position:absolute;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,transparent,var(--green),var(--cyan),var(--green),transparent);
+  box-shadow:0 0 20px var(--cyan),0 0 40px var(--cyan);
+  top:-4px;
+}
+.glitch-text-container{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;opacity:0;
+}
+.g-line{
+  font-family:'Share Tech Mono',monospace;font-size:clamp(10px,1.5vw,14px);
+  color:var(--green);letter-spacing:0.2em;opacity:0;transform:translateX(-20px);
+}
+.progress-bar-wrap{
+  width:min(400px,80vw);height:3px;background:rgba(0,255,136,0.15);
+  margin-top:20px;border-radius:2px;overflow:hidden;
+}
+.progress-bar-inner{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--green),var(--cyan));
+  box-shadow:0 0 10px var(--cyan);
+  border-radius:2px;
+}
+.pct-label{
+  font-family:'Orbitron',monospace;font-size:20px;font-weight:700;
+  color:var(--cyan);text-shadow:0 0 20px var(--cyan);margin-top:12px;
+}
+.init-title{
+  font-family:'Orbitron',monospace;font-size:clamp(1rem,3vw,2rem);font-weight:900;
+  color:var(--cyan);text-shadow:0 0 30px var(--cyan);letter-spacing:0.15em;
+  margin-bottom:12px;
+}
+
+/* ===== VIDEO OVERLAY ===== */
+#videoOverlay{
+  position:fixed;inset:0;z-index:100;background:#000;
+  display:none;align-items:center;justify-content:center;
+  flex-direction:column;
+}
+#videoOverlay.active{display:flex}
+#mainVideo{width:100%;height:100%;object-fit:contain;display:block}
+.video-close{
+  position:absolute;top:20px;right:20px;z-index:101;
+  font-family:'Share Tech Mono',monospace;font-size:11px;
+  color:rgba(0,245,255,0.6);border:1px solid rgba(0,245,255,0.3);
+  background:rgba(0,0,0,0.7);padding:8px 14px;cursor:pointer;
+  letter-spacing:0.1em;transition:all 0.2s;
+}
+.video-close:hover{color:var(--cyan);border-color:var(--cyan);background:rgba(0,245,255,0.1)}
+.video-skip{
+  position:absolute;bottom:30px;right:30px;
+  font-family:'Orbitron',monospace;font-size:12px;font-weight:700;
+  color:var(--cyan);border:1px solid var(--cyan);
+  background:rgba(0,0,0,0.8);padding:10px 24px;cursor:pointer;
+  letter-spacing:0.1em;transition:all 0.2s;
+  display:flex;align-items:center;gap:8px;
+}
+.video-skip:hover{background:rgba(0,245,255,0.15);box-shadow:0 0 20px rgba(0,245,255,0.3)}
+.video-unmute{
+  position:absolute;bottom:30px;left:30px;
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  color:var(--green);border:1px solid var(--green);
+  background:rgba(0,0,0,0.8);padding:10px 20px;cursor:pointer;
+  letter-spacing:0.1em;transition:all 0.2s;animation:blink 2s step-end infinite;
+}
+.video-unmute:hover{background:rgba(0,255,136,0.15);box-shadow:0 0 20px rgba(0,255,136,0.3)}
+.video-unmute.unmuted{animation:none;opacity:0.4;}
+
+@media(max-width:768px){
+  .panel{display:none}
+  .info-row{gap:20px}
+  .btn-orbit{width:220px;height:220px}
+  .ring-1{width:200px;height:200px}
+  .ring-2{width:172px;height:172px}
+  .ring-3{width:144px;height:144px}
+  .launch-btn{width:120px;height:120px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="matrixCanvas"></canvas>
+<div class="grid-overlay"></div>
+<div class="scanlines"></div>
+<div class="corner c-tl"></div>
+<div class="corner c-tr"></div>
+<div class="corner c-bl"></div>
+<div class="corner c-br"></div>
+
+<!-- STATUS BAR TOP -->
+<div class="status-top">
+  <span>SYS://CYBER_SENTINEL_2025 <span class="blink">█</span></span>
+  <span><span class="dot-green">● </span>SECURE_CONN_ESTABLISHED</span>
+  <span id="clock">00:00:00</span>
+</div>
+
+<!-- SIDE PANELS -->
+<div class="panel panel-l">
+  <div class="panel-title">&gt; THREAT_MONITOR</div>
+  <div>FIREWALL.........OK</div>
+  <div class="bar"><div class="bar-fill" style="animation-duration:2.1s"></div></div>
+  <div>IDS/IPS..........OK</div>
+  <div class="bar"><div class="bar-fill" style="animation-duration:3.5s"></div></div>
+  <div>ENCRYPTION...ACTIVE</div>
+  <div class="bar"><div class="bar-fill" style="animation-duration:1.8s"></div></div>
+  <div style="margin-top:16px;color:rgba(0,255,136,0.7)">THREAT_LEVEL:</div>
+  <div style="color:var(--green);font-size:13px">■ MINIMAL</div>
+</div>
+<div class="panel panel-r">
+  <div class="panel-title">NODE_STATUS &lt;</div>
+  <div>NODES_ONLINE: 247</div>
+  <div>PACKETS/SEC: 4.2K</div>
+  <div>LATENCY: 12ms</div>
+  <div>UPTIME: 99.97%</div>
+  <div style="margin-top:16px;color:rgba(0,255,136,0.7)">AUTH_LEVEL &lt;</div>
+  <div style="color:var(--green);font-size:13px">■ CLEARANCE_5</div>
+</div>
+
+<!-- MAIN STAGE -->
+<div class="stage" id="mainStage">
+  <div class="event-badge">◈ SEMINAR NASIONAL TEKNOLOGI &amp; KEAMANAN SIBER ◈</div>
+  <div class="event-title">CYBER<span>SENTINEL</span></div>
+  <div class="event-sub">2 0 2 5 &nbsp;·&nbsp; S Y S T E M &nbsp; I N I T I A L I Z A T I O N</div>
+
+  <!-- BUTTON ORBIT SYSTEM -->
+  <div class="btn-orbit">
+    <!-- Circuit pattern SVG -->
+    <svg class="circuit-bg" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#00f5ff" stroke-width="0.5" fill="none" opacity="0.4">
+        <path d="M130 10 L130 50 M130 210 L130 250"/>
+        <path d="M10 130 L50 130 M210 130 L250 130"/>
+        <path d="M130 50 L100 50 L80 70"/>
+        <path d="M130 50 L160 50 L180 70"/>
+        <path d="M130 210 L100 210 L80 190"/>
+        <path d="M130 210 L160 210 L180 190"/>
+        <path d="M50 130 L50 100 L70 80"/>
+        <path d="M50 130 L50 160 L70 180"/>
+        <path d="M210 130 L210 100 L190 80"/>
+        <path d="M210 130 L210 160 L190 180"/>
+        <circle cx="80" cy="70" r="3" fill="#00f5ff"/>
+        <circle cx="180" cy="70" r="3" fill="#00f5ff"/>
+        <circle cx="80" cy="190" r="3" fill="#00ff88"/>
+        <circle cx="180" cy="190" r="3" fill="#00ff88"/>
+        <circle cx="70" cy="80" r="3" fill="#00f5ff"/>
+        <circle cx="190" cy="80" r="3" fill="#00f5ff"/>
+        <circle cx="70" cy="180" r="3" fill="#00ff88"/>
+        <circle cx="190" cy="180" r="3" fill="#00ff88"/>
+      </g>
+    </svg>
+    <div class="ring ring-1"></div>
+    <div class="ring ring-2"></div>
+    <div class="ring ring-3"></div>
+    <button class="launch-btn" id="launchBtn" aria-label="Inisiasi Sistem - Mulai Acara">
+      <!-- Fingerprint / power icon -->
+      <svg class="btn-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="16" stroke="#00f5ff" stroke-width="1" stroke-dasharray="3 2"/>
+        <path d="M18 8 L18 18" stroke="#00f5ff" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M12 11.5 A9 9 0 1 0 24 11.5" stroke="#00f5ff" stroke-width="2" stroke-linecap="round" fill="none"/>
+        <circle cx="18" cy="18" r="2" fill="#00ff88"/>
+      </svg>
+      <div class="btn-label">INISIASI<br>SISTEM</div>
+    </button>
+  </div>
+
+  <!-- INFO ROW -->
+  <div class="info-row">
+    <div class="info-item">
+      <div class="info-label">TANGGAL</div>
+      <div class="info-val">15 APR 2025</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">LOKASI</div>
+      <div class="info-val">AULA UTAMA</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">PESERTA</div>
+      <div class="info-val" id="participantCount">0247</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">STATUS</div>
+      <div class="info-val dot-green">STANDBY</div>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS BAR BOTTOM -->
+<div class="status-bottom">
+  <span><span class="dot-green">●</span> ALL_SYSTEMS_NOMINAL</span>
+  <span>ENC:AES-256-GCM</span>
+  <span>VPN:ACTIVE</span>
+  <span>AUTH:BIOMETRIC_OK</span>
+  <span class="blink" style="color:rgba(0,245,255,0.4)">AWAITING_INPUT_</span>
+</div>
+
+<!-- GLITCH / SCANNING OVERLAY -->
+<div id="glitchOverlay">
+  <div id="scanBar" class="scan-bar"></div>
+  <div class="glitch-text-container" id="glitchTexts">
+    <div class="init-title" id="initTitle">INITIALIZING...</div>
+    <div class="g-line" id="g1">&gt; AUTHENTICATING CREDENTIALS............[OK]</div>
+    <div class="g-line" id="g2">&gt; LOADING SECURITY PROTOCOLS............[OK]</div>
+    <div class="g-line" id="g3">&gt; ESTABLISHING ENCRYPTED TUNNEL..........[OK]</div>
+    <div class="g-line" id="g4">&gt; VERIFYING SYSTEM INTEGRITY............[OK]</div>
+    <div class="g-line" id="g5">&gt; LAUNCHING EVENT SEQUENCE.............[OK]</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-inner" id="progBar"></div>
+    </div>
+    <div class="pct-label" id="pctLabel">0%</div>
+  </div>
+  <!-- glitch lines injected by JS -->
+</div>
+
+<!-- VIDEO OVERLAY -->
+<div id="videoOverlay">
+  <video id="mainVideo" muted autoplay playsinline preload="auto">
+    <source src="opening_video.mp4" type="video/mp4"/>
+  </video>
+  <!-- VOLUME UNMUTE BUTTON -->
+  <button class="video-unmute" id="videoUnmute" title="Aktifkan Suara">🔇 TAP TO UNMUTE</button>
+  <div id="videoPlaceholder" style="display:none;position:absolute;inset:0;background:#000;flex-direction:column;align-items:center;justify-content:center;font-family:'Orbitron',monospace;text-align:center;padding:2rem;">
+    <div style="font-size:clamp(1.5rem,5vw,4rem);font-weight:900;color:#00f5ff;text-shadow:0 0 40px #00f5ff;letter-spacing:0.1em;margin-bottom:1rem">CYBER SENTINEL 2025</div>
+    <div style="font-size:clamp(0.7rem,2vw,1rem);color:#00ff88;letter-spacing:0.3em;margin-bottom:2rem">SELAMAT DATANG — WELCOME TO THE FUTURE OF SECURITY</div>
+    <div style="font-size:0.75rem;font-family:'Share Tech Mono',monospace;color:rgba(0,245,255,0.4);letter-spacing:0.1em">[ Pastikan file opening_video.mp4 ada di folder yang sama ]</div>
+  </div>
+  <button class="video-close" id="videoClose">✕ CLOSE</button>
+  <button class="video-skip" id="videoSkip">SKIP &nbsp;▶▶</button>
+</div>
+
+<script>
+/* ---- CLOCK ---- */
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    n.getHours().toString().padStart(2,'0')+':'+
+    n.getMinutes().toString().padStart(2,'0')+':'+
+    n.getSeconds().toString().padStart(2,'0');
+}
+setInterval(updateClock,1000);updateClock();
+
+/* ---- MATRIX RAIN ---- */
+(function(){
+  const c=document.getElementById('matrixCanvas');
+  const ctx=c.getContext('2d');
+  function resize(){c.width=window.innerWidth;c.height=window.innerHeight}
+  resize();window.addEventListener('resize',resize);
+  const cols=Math.floor(window.innerWidth/18);
+  const drops=Array(cols).fill(1);
+  const chars='アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFABCDEF<>{}[]|/\\?*#@!$%^&';
+  function draw(){
+    ctx.fillStyle='rgba(2,8,16,0.05)';
+    ctx.fillRect(0,0,c.width,c.height);
+    ctx.font='14px Share Tech Mono,monospace';
+    drops.forEach((y,i)=>{
+      const ch=chars[Math.floor(Math.random()*chars.length)];
+      const bright=Math.random()>0.95;
+      ctx.fillStyle=bright?'#ffffff':i%3===0?'#00ff88':'#00b4d8';
+      ctx.fillText(ch,i*18,y*18);
+      if(y*18>c.height&&Math.random()>0.975)drops[i]=0;
+      drops[i]++;
+    });
+  }
+  setInterval(draw,50);
+})();
+
+/* ---- RANDOM PARTICIPANT COUNT ---- */
+setInterval(()=>{
+  const el=document.getElementById('participantCount');
+  if(el)el.textContent=String(240+Math.floor(Math.random()*20)).padStart(4,'0');
+},3000);
+
+/* ---- GLITCH HELPER ---- */
+function injectGlitchLines(){
+  const ov=document.getElementById('glitchOverlay');
+  for(let i=0;i<12;i++){
+    const l=document.createElement('div');
+    l.className='glitch-line';
+    l.style.cssText=`top:${Math.random()*100}%;height:${Math.random()*6+1}px;opacity:${Math.random()*0.6+0.1};background:${Math.random()>0.5?'#00f5ff':'#00ff88'};animation:none`;
+    ov.appendChild(l);
+  }
+}
+
+/* ---- LAUNCH SEQUENCE ---- */
+document.getElementById('launchBtn').addEventListener('click',startLaunchSequence);
+
+function startLaunchSequence(){
+  document.getElementById('launchBtn').disabled=true;
+  const ov=document.getElementById('glitchOverlay');
+  injectGlitchLines();
+
+  // Phase 1: glitch flash
+  ov.style.opacity='0';
+  ov.classList.add('active');
+  ov.style.background='rgba(2,8,16,0.96)';
+
+  let flashes=0;
+  const flashInterval=setInterval(()=>{
+    ov.style.opacity=flashes%2===0?'1':'0.3';
+    flashes++;
+    if(flashes>6){clearInterval(flashInterval);runScanPhase();}
+  },80);
+}
+
+function runScanPhase(){
+  const ov=document.getElementById('glitchOverlay');
+  const bar=document.getElementById('scanBar');
+  const texts=document.getElementById('glitchTexts');
+  ov.style.opacity='1';
+  bar.style.transition='none';
+  bar.style.top='-4px';
+
+  // Animate scan bar top to bottom
+  setTimeout(()=>{
+    bar.style.transition='top 1.2s cubic-bezier(0.25,0.46,0.45,0.94)';
+    bar.style.top='100vh';
+  },50);
+
+  setTimeout(()=>{
+    texts.style.opacity='1';
+    revealLines();
+  },600);
+}
+
+function revealLines(){
+  const lines=['g1','g2','g3','g4','g5'];
+  const prog=document.getElementById('progBar');
+  const pct=document.getElementById('pctLabel');
+  let i=0;
+  document.getElementById('initTitle').style.opacity='1';
+
+  const iv=setInterval(()=>{
+    if(i<lines.length){
+      const el=document.getElementById(lines[i]);
+      if(el){el.style.cssText='opacity:1;transform:translateX(0);transition:all 0.4s ease';}
+      const p=Math.round((i+1)/lines.length*100);
+      prog.style.width=p+'%';pct.textContent=p+'%';
+      prog.style.transition='width 0.4s ease';
+      i++;
+    }else{
+      clearInterval(iv);
+      setTimeout(launchVideo,700);
+    }
+  },380);
+}
+
+function launchVideo(){
+  const glitch=document.getElementById('glitchOverlay');
+  const vov=document.getElementById('videoOverlay');
+  const vid=document.getElementById('mainVideo');
+  const ph=document.getElementById('videoPlaceholder');
+
+  // fast flicker exit
+  let f=0;
+  const fi=setInterval(()=>{
+    glitch.style.opacity=f%2===0?'0':'1';
+    f++;
+    if(f>5){clearInterval(fi);glitch.classList.remove('active');}
+  },60);
+
+  vov.classList.add('active');
+
+  // Pastikan muted dulu agar autoplay diizinkan browser
+  vid.muted=true;
+  const playPromise=vid.play();
+  if(playPromise!==undefined){
+    playPromise.then(()=>{
+      // Berhasil play — tampilkan tombol unmute
+      document.getElementById('videoUnmute').style.display='block';
+    }).catch(()=>{
+      // Gagal total — tampilkan placeholder
+      ph.style.display='flex';
+      vid.style.display='none';
+    });
+  }
+}
+
+/* ---- UNMUTE HANDLER ---- */
+document.getElementById('videoUnmute').addEventListener('click',function(){
+  const vid=document.getElementById('mainVideo');
+  vid.muted=!vid.muted;
+  this.textContent=vid.muted?'🔇 TAP TO UNMUTE':'🔊 SOUND ON';
+  this.classList.toggle('unmuted',!vid.muted);
+});
+
+/* ---- VIDEO CONTROLS ---- */
+function closeVideo(){
+  const vov=document.getElementById('videoOverlay');
+  const vid=document.getElementById('mainVideo');
+  vov.classList.remove('active');
+  vid.pause();vid.currentTime=0;
+  vid.muted=true;
+  const unmuteBtn=document.getElementById('videoUnmute');
+  unmuteBtn.textContent='🔇 TAP TO UNMUTE';
+  unmuteBtn.classList.remove('unmuted');
+  document.getElementById('launchBtn').disabled=false;
+  // Reset glitch overlay
+  const ov=document.getElementById('glitchOverlay');
+  ov.classList.remove('active');
+  const gl=ov.querySelectorAll('.glitch-line');
+  gl.forEach(l=>l.remove());
+  ['g1','g2','g3','g4','g5'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.style.cssText='opacity:0;transform:translateX(-20px)';
+  });
+  document.getElementById('initTitle').style.opacity='0';
+  document.getElementById('glitchTexts').style.opacity='0';
+  document.getElementById('progBar').style.width='0%';
+  document.getElementById('pctLabel').textContent='0%';
+}
+document.getElementById('videoClose').addEventListener('click',closeVideo);
+document.getElementById('videoSkip').addEventListener('click',closeVideo);
+document.getElementById('mainVideo').addEventListener('ended',closeVideo);
+
+/* ---- KEYBOARD ---- */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')closeVideo();
+  if(e.key===' '&&!document.getElementById('videoOverlay').classList.contains('active')){
+    e.preventDefault();
+    if(!document.getElementById('launchBtn').disabled)startLaunchSequence();
+  }
+});
+</script>
+</body>
+</html>
