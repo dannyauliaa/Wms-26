@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>CYBER SENTINEL 2025 — OPENING</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cyan:#00f5ff;
+  --green:#00ff88;
+  --dark:#020810;
+}
+html,body{
+  width:100%;height:100%;overflow:hidden;
+  background:#000;cursor:none;
+}
+
+/* ---- FADE IN ON LOAD ---- */
+body{animation:fadeIn 0.6s ease forwards}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* ---- VIDEO FULLSCREEN ---- */
+#videoWrap{
+  position:fixed;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#000;
+}
+#mainVideo{
+  width:100%;height:100%;
+  object-fit:contain;
+  display:block;
+}
+
+/* ---- SCAN LINE EFFECT ---- */
+.scanlines{
+  position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(
+    0deg,transparent,transparent 2px,
+    rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px
+  );
+}
+
+/* ---- VIGNETTE ---- */
+.vignette{
+  position:fixed;inset:0;z-index:3;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.7) 100%);
+}
+
+/* ---- TOP HUD ---- */
+.hud-top{
+  position:fixed;top:0;left:0;right:0;z-index:10;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 24px;
+  font-family:'Share Tech Mono',monospace;font-size:10px;
+  color:rgba(0,245,255,0.45);
+  background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent);
+  letter-spacing:0.15em;
+  opacity:0;animation:hudFade 1s ease 0.8s forwards;
+}
+@keyframes hudFade{to{opacity:1}}
+
+/* ---- CORNER DECO ---- */
+.corner{position:fixed;width:50px;height:50px;z-index:11;pointer-events:none;opacity:0;animation:hudFade 1s ease 1s forwards}
+.corner::before,.corner::after{content:'';position:absolute;background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+.corner::before{width:2px;height:28px}.corner::after{width:28px;height:2px}
+.c-tl{top:14px;left:14px}.c-tl::before{top:0;left:0}.c-tl::after{top:0;left:0}
+.c-tr{top:14px;right:14px;transform:scaleX(-1)}
+.c-bl{bottom:14px;left:14px;transform:scaleY(-1)}
+.c-br{bottom:14px;right:14px;transform:scale(-1)}
+
+/* ---- BOTTOM CONTROLS ---- */
+.controls{
+  position:fixed;bottom:0;left:0;right:0;z-index:10;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:20px 28px;
+  background:linear-gradient(to top,rgba(0,0,0,0.75),transparent);
+  opacity:0;
+  transition:opacity 0.4s;
+}
+.controls.visible{opacity:1}
+
+/* Unmute Button */
+.btn-unmute{
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  color:var(--green);border:1px solid rgba(0,255,136,0.5);
+  background:rgba(0,0,0,0.75);padding:10px 20px;cursor:pointer;
+  letter-spacing:0.12em;transition:all 0.2s;
+  animation:blinkAnim 2s step-end infinite;
+  display:flex;align-items:center;gap:8px;
+}
+.btn-unmute:hover{background:rgba(0,255,136,0.15);box-shadow:0 0 20px rgba(0,255,136,0.3);animation:none}
+.btn-unmute.unmuted{animation:none;opacity:0.5;border-color:rgba(0,255,136,0.2)}
+@keyframes blinkAnim{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* Progress bar */
+.progress-wrap{
+  flex:1;margin:0 20px;height:2px;
+  background:rgba(0,245,255,0.12);border-radius:2px;overflow:hidden;
+  cursor:pointer;
+}
+.progress-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:2px;transition:width 0.25s linear}
+
+/* Skip Button */
+.btn-skip{
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  color:var(--cyan);border:1px solid rgba(0,245,255,0.4);
+  background:rgba(0,0,0,0.75);padding:10px 22px;cursor:pointer;
+  letter-spacing:0.1em;transition:all 0.2s;
+  display:flex;align-items:center;gap:8px;
+}
+.btn-skip:hover{background:rgba(0,245,255,0.12);box-shadow:0 0 20px rgba(0,245,255,0.3)}
+
+/* ---- PLACEHOLDER (jika video tidak ada) ---- */
+#placeholder{
+  display:none;position:fixed;inset:0;z-index:5;
+  background:var(--dark);
+  flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:2rem;
+}
+.ph-title{
+  font-family:'Orbitron',monospace;font-size:clamp(1.5rem,5vw,4rem);
+  font-weight:900;color:var(--cyan);text-shadow:0 0 40px var(--cyan);
+  letter-spacing:0.08em;margin-bottom:1rem;
+}
+.ph-sub{
+  font-family:'Share Tech Mono',monospace;font-size:clamp(0.7rem,2vw,1rem);
+  color:var(--green);letter-spacing:0.25em;margin-bottom:2rem;
+}
+.ph-note{
+  font-family:'Share Tech Mono',monospace;font-size:0.72rem;
+  color:rgba(0,245,255,0.35);letter-spacing:0.1em;
+  border:1px solid rgba(0,245,255,0.1);padding:12px 24px;
+  border-radius:2px;margin-bottom:2rem;
+}
+.btn-back{
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  color:var(--cyan);border:1px solid var(--cyan);
+  background:rgba(0,245,255,0.05);padding:12px 28px;cursor:pointer;
+  letter-spacing:0.15em;transition:all 0.2s;margin-top:1rem;
+}
+.btn-back:hover{background:rgba(0,245,255,0.15);box-shadow:0 0 20px rgba(0,245,255,0.3)}
+
+/* ---- END SCREEN ---- */
+#endScreen{
+  display:none;position:fixed;inset:0;z-index:20;
+  background:rgba(2,8,16,0.96);
+  flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:2rem;
+  animation:fadeIn 0.8s ease;
+}
+.end-title{
+  font-family:'Orbitron',monospace;font-size:clamp(1rem,3vw,2.5rem);
+  font-weight:900;color:var(--cyan);text-shadow:0 0 30px var(--cyan);
+  letter-spacing:0.15em;margin-bottom:0.5rem;
+}
+.end-sub{
+  font-family:'Share Tech Mono',monospace;font-size:0.85rem;
+  color:var(--green);letter-spacing:0.2em;margin-bottom:2.5rem;
+}
+.btn-end{
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  color:#000;background:var(--cyan);border:none;
+  padding:14px 36px;cursor:pointer;letter-spacing:0.15em;
+  box-shadow:0 0 30px rgba(0,245,255,0.6);transition:all 0.2s;margin:8px;
+}
+.btn-end:hover{background:var(--green);box-shadow:0 0 40px rgba(0,255,136,0.7)}
+.btn-end-sec{
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  color:var(--cyan);background:transparent;border:1px solid rgba(0,245,255,0.4);
+  padding:14px 36px;cursor:pointer;letter-spacing:0.15em;transition:all 0.2s;margin:8px;
+}
+.btn-end-sec:hover{background:rgba(0,245,255,0.1);box-shadow:0 0 20px rgba(0,245,255,0.3)}
+</style>
+</head>
+<body>
+
+<div class="corner c-tl"></div>
+<div class="corner c-tr"></div>
+<div class="corner c-bl"></div>
+<div class="corner c-br"></div>
+
+<!-- HUD TOP -->
+<div class="hud-top">
+  <span>CYBER_SENTINEL_2025 // OPENING_SEQUENCE</span>
+  <span id="clock">00:00:00</span>
+</div>
+
+<!-- SCANLINES + VIGNETTE -->
+<div class="scanlines"></div>
+<div class="vignette"></div>
+
+<!-- VIDEO -->
+<div id="videoWrap">
+  <video id="mainVideo" muted playsinline preload="auto">
+    <source src="opening_video.mp4" type="video/mp4"/>
+  </video>
+</div>
+
+<!-- PLACEHOLDER (jika mp4 tidak ditemukan) -->
+<div id="placeholder">
+  <div class="ph-title">CYBER SENTINEL 2025</div>
+  <div class="ph-sub">SELAMAT DATANG — WELCOME TO THE FUTURE OF SECURITY</div>
+  <div class="ph-note">[ File <strong>opening_video.mp4</strong> tidak ditemukan.<br>Pastikan file ada di folder yang sama dengan index.html ]</div>
+  <button class="btn-back" onclick="goBack()">← KEMBALI KE HALAMAN UTAMA</button>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls" id="controls">
+  <button class="btn-unmute" id="btnUnmute" title="Toggle Suara">🔇 TAP TO UNMUTE</button>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+  <button class="btn-skip" id="btnSkip">SKIP &nbsp;▶▶</button>
+</div>
+
+<!-- END SCREEN -->
+<div id="endScreen">
+  <div class="end-title">SISTEM AKTIF</div>
+  <div class="end-sub">▸ CYBER SENTINEL 2025 — READY ◂</div>
+  <button class="btn-end" onclick="goBack()">◈ KEMBALI KE HALAMAN UTAMA</button>
+  <br>
+  <button class="btn-end-sec" onclick="replayVideo()">↺ PUTAR ULANG</button>
+</div>
+
+<script>
+/* ---- CLOCK ---- */
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    n.getHours().toString().padStart(2,'0')+':'+
+    n.getMinutes().toString().padStart(2,'0')+':'+
+    n.getSeconds().toString().padStart(2,'0');
+}
+setInterval(updateClock,1000);updateClock();
+
+/* ---- VIDEO SETUP ---- */
+const vid=document.getElementById('mainVideo');
+const controls=document.getElementById('controls');
+const btnUnmute=document.getElementById('btnUnmute');
+const btnSkip=document.getElementById('btnSkip');
+const progressBar=document.getElementById('progressBar');
+const progressWrap=document.getElementById('progressWrap');
+const placeholder=document.getElementById('placeholder');
+const endScreen=document.getElementById('endScreen');
+
+// Autoplay saat halaman load
+window.addEventListener('load',()=>{
+  vid.muted=true;
+  const p=vid.play();
+  if(p!==undefined){
+    p.then(()=>{
+      showControls();
+    }).catch(()=>{
+      // Coba lagi dengan interaksi user
+      showManualPlayPrompt();
+    });
+  }
+});
+
+// Tampilkan prompt jika autoplay diblokir
+function showManualPlayPrompt(){
+  document.body.style.cursor='pointer';
+  document.body.addEventListener('click',()=>{
+    vid.play().then(()=>{
+      document.body.style.cursor='none';
+      showControls();
+    }).catch(()=>{
+      // Video benar-benar tidak bisa diplay — tampilkan placeholder
+      placeholder.style.display='flex';
+    });
+  },{once:true});
+}
+
+// Error handler — video file tidak ada
+vid.addEventListener('error',()=>{
+  placeholder.style.display='flex';
+});
+vid.addEventListener('emptied',()=>{});
+
+// Validasi source loaded
+vid.addEventListener('loadedmetadata',()=>{
+  // Video ditemukan & siap
+});
+
+/* ---- SHOW / HIDE CONTROLS ---- */
+let hideTimer;
+function showControls(){
+  controls.classList.add('visible');
+  clearTimeout(hideTimer);
+  hideTimer=setTimeout(()=>{controls.classList.remove('visible')},3500);
+}
+document.addEventListener('mousemove',showControls);
+document.addEventListener('touchstart',showControls);
+// Selalu tampilkan saat hover area control
+controls.addEventListener('mouseenter',()=>{
+  clearTimeout(hideTimer);
+  controls.classList.add('visible');
+});
+controls.addEventListener('mouseleave',showControls);
+
+/* ---- PROGRESS BAR ---- */
+vid.addEventListener('timeupdate',()=>{
+  if(vid.duration){
+    const pct=(vid.currentTime/vid.duration)*100;
+    progressBar.style.width=pct+'%';
+  }
+});
+
+// Klik progress untuk seek
+progressWrap.addEventListener('click',(e)=>{
+  const rect=progressWrap.getBoundingClientRect();
+  const ratio=(e.clientX-rect.left)/rect.width;
+  vid.currentTime=ratio*vid.duration;
+});
+
+/* ---- UNMUTE TOGGLE ---- */
+btnUnmute.addEventListener('click',()=>{
+  vid.muted=!vid.muted;
+  btnUnmute.textContent=vid.muted?'🔇 TAP TO UNMUTE':'🔊 SOUND ON';
+  btnUnmute.classList.toggle('unmuted',!vid.muted);
+});
+
+/* ---- SKIP / END ---- */
+function endVideo(){
+  vid.pause();
+  endScreen.style.display='flex';
+}
+btnSkip.addEventListener('click',endVideo);
+vid.addEventListener('ended',endVideo);
+
+/* ---- NAVIGATION ---- */
+function goBack(){
+  window.location.href='index.html';
+}
+function replayVideo(){
+  endScreen.style.display='none';
+  vid.currentTime=0;
+  vid.play().then(showControls);
+}
+
+/* ---- KEYBOARD ---- */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')goBack();
+  if(e.key===' '){e.preventDefault();vid.paused?vid.play():vid.pause()}
+  if(e.key==='m'||e.key==='M'){
+    vid.muted=!vid.muted;
+    btnUnmute.textContent=vid.muted?'🔇 TAP TO UNMUTE':'🔊 SOUND ON';
+    btnUnmute.classList.toggle('unmuted',!vid.muted);
+  }
+});
+</script>
+</body>
+</html>
